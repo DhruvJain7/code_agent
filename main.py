@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from call_function import available_functions
+from call_function import available_functions, call_function
 from prompts import system_prompt
 
 load_dotenv()
@@ -37,9 +37,22 @@ if response.usage_metadata.prompt_token_count == None:
 prompt_tokens = response.usage_metadata.prompt_token_count
 response_tokens = response.usage_metadata.candidates_token_count
 prompt = args.user_prompt
+function_result_list = []
 if response.function_calls != None:
     for function_call in response.function_calls:
-        print(f"Calling function: {function_call.name}({function_call.args})")
+        # print(f"Calling function: {function_call.name}({function_call.args})"
+        function_call_result = call_function(function_call, verbose=args.verbose)
+        if not function_call_result.parts:
+            raise Exception("...")
+        if not function_call_result.parts[0].function_response:
+            raise Exception("...")
+        if not function_call_result.parts[0].function_response.response:
+            raise Exception("...")
+        function_result_list.append(function_call_result.parts[0])
+        if args.verbose:
+            print(f"-> {function_call_result.parts[0].function_response.response}")
+
+
 else:
     if args.verbose == True:
         print(f"Agent :{response.text}")
